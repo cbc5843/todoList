@@ -9,6 +9,8 @@ const initialItems = [
 function App() {
   //State of items list
   const [items, setItems] = useState([])
+  //State of sort
+  const [sortBy, setSortBy] = useState("input")
 
   function handleAddItems(item){
     //Add new item
@@ -19,12 +21,22 @@ function App() {
     setItems(items => items.filter(item => item.id !== id))
   }
 
+  function handleToggleItem(id){
+    setItems(items => items.map(item => item.id === id ? 
+      {...item, complete: !item.complete} : item))
+  }
+
   return (
     <div className="App">
       <Logo />
       <AddItemForm onAddItem={handleAddItems} />
-      <SortItemsForm />
-      <ItemList items={items} onDelete={handleDeleteItem}/>
+      <SortItemsForm sortBy={sortBy} onSortSelection={setSortBy}/>
+      <ItemList 
+        items={items} 
+        onDelete={handleDeleteItem} 
+        sortBy={sortBy} 
+        onToggle={handleToggleItem}
+      />
     </div>
   );
 }
@@ -68,38 +80,56 @@ function AddItemForm({onAddItem}){
   )
 }
 
-function ItemList({items, onDelete}){
+function ItemList({items, onDelete, sortBy, onToggle}){
+  let sortedItems;
+
+  if(sortBy === "input") sortedItems = items;
+
+  if(sortBy === "alphabet") 
+    sortedItems = items
+      .slice()
+      .sort((a,b) => a.description.localeCompare(b.description));
+
+  if(sortBy === "complete") 
+    sortedItems = items
+      .slice()
+      .sort((a,b) => Number(a.complete) - Number(b.complete));
+
   return(
     <ul>
-      {items.map((item) => (
+      {sortedItems.map((item) => (
         <Item item={item} 
         id={item.id} 
         onDelete={onDelete}
+        onToggle={onToggle}
         />
       ))}
     </ul>
   )
 }
 
-function Item({item, id, onDelete}){
+function Item({item, id, onDelete, onToggle}){
   return(
-    <li>
-      <h2>{item.description} <button onClick={() => onDelete(item.id)}>❌</button></h2>
+    <li key={id}>
+      <input
+          type="checkbox"
+          checked={item.complete}
+          onChange={() => onToggle(item.id)}
+      />
+      <span style={{ textDecoration: item.complete ? 'line-through' : 'none' }}>
+        {item.description}
+        <button onClick={() => onDelete(item.id)}>❌</button>
+      </span>
       
     </li>
   )
 }
 
-function SortItemsForm(){
-  const [sortBy, setSortBy] = useState("input")
-
-  let sortedItems;
-
-  if(sortBy ==="input")
-
+function SortItemsForm({sortBy, onSortSelection}){
+  
   return(
     <div>
-      <select value={sortBy} onChange={(e)=> setSortBy(e.target.value)}>
+      <select value={sortBy} onChange={(e)=> onSortSelection(e.target.value)}>
         <option value="input">
           Sort by input order
         </option>
